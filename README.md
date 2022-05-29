@@ -106,11 +106,11 @@ Fields::forLocale(function (string $locale) {
     ->make(),
 ```
 
-### Customizing label
+### Customizing names (labels)
 
-By default, a label of the translatable field is shown with the locale suffix: ` [en]`.
+By default, a name of the translatable field is shown with the locale suffix like this: `Name (en)`.
 
-To customize the label display logic for fields, you can globally specify the label display logic in the `AppServiceProvider`.
+To customize the name display logic for fields, you can specify the customizer function globally in the `AppServiceProvider`.
 
 ```php
 use Nevadskiy\Nova\Translatable\Fields;
@@ -119,11 +119,11 @@ use Nevadskiy\Nova\Translatable\Fields;
 
 public function boot(): void
 {
-    Fields::labelUsing(fn (string $label, string $locale) => "{$label} ({$locale})");
+    Fields::nameUsing(fn (string $name, string $locale) => "{$name} ({$locale})");
 }
 ```
 
-You can also specify the label yourself when defining a field in a resource.
+You can also specify the name manually when defining a field in the resource.
 
 ```php
 Fields::forLocale(function (string $locale) {
@@ -131,8 +131,23 @@ Fields::forLocale(function (string $locale) {
         Text::make(__('Name (:locale)', ['locale' => $locale])),
     ];
 })
-    ->rawLabel()
+    ->originalName()
     ->make(),
+```
+
+Note that `originalName` should be called to prevent customizing the manually specified name.
+
+Also, it is possible to disable names customization globally in the `AppServiceProvider`.
+
+```php
+use Nevadskiy\Nova\Translatable\Fields;
+
+...
+
+public function boot(): void
+{
+    Fields::originalNames();
+}
 ```
 
 ### Index View 
@@ -232,9 +247,7 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 ## 🔨 To Do
 
 - [ ] refactor `ignoreUntouched` behaviour using `has` translator method.
-- [ ] add static `labelUsing` method and add possibility to configure global labelSuffix.
-- [ ] add `rawLabel` method.
 - [ ] add `filterable` support.
+- [ ] add `mergeLocales` method.
 - [ ] add `onlyFallbackLocaleRequired`, `onlyCurrentLocaleRequired` methods.
 - [ ] add `ignoreUntouchedOnUpdate`, `ignoreUntouchedOnCreate` methods.
-- [ ] add `mergeLocales` method.

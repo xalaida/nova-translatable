@@ -8,9 +8,6 @@ use Illuminate\Support\Str;
 use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Http\Requests\NovaRequest;
 
-/**
- * @TODO add helper to mark field as required only for fallback locale.
- */
 class Fields
 {
     /**
@@ -26,6 +23,27 @@ class Fields
      * @var string
      */
     protected static $attributeLocaleSeparator = '__';
+
+    /**
+     * The default field name customizer function.
+     *
+     * @var callable
+     */
+    protected static $defaultNameCustomizer;
+
+    /**
+     * The fields' resolver function.
+     *
+     * @var callable
+     */
+    protected $fieldsResolver;
+
+    /**
+     * The field name customizer function.
+     *
+     * @var callable
+     */
+    protected $nameCustomizer;
 
     /**
      * The locales list.
@@ -49,18 +67,27 @@ class Fields
     protected $ignoreUntouched = false;
 
     /**
-     * The fields' resolver function.
-     *
-     * @var callable
-     */
-    protected $fieldsResolver;
-
-    /**
      * Specify the locale list for the field.
      */
     public static function defaultLocales(array $locales): void
     {
         static::$defaultLocales = $locales;
+    }
+
+    /**
+     * Specify the default customizer function for the field name.
+     */
+    public static function nameUsing(callable $customizer): void
+    {
+        static::$defaultNameCustomizer = $customizer;
+    }
+
+    /**
+     * Specify the default customizer function for the field name.
+     */
+    public static function originalNames(): void
+    {
+        static::$defaultNameCustomizer = static::originalNameCustomizer();
     }
 
     /**
@@ -97,7 +124,18 @@ class Fields
     public function __construct(callable $fieldsResolver)
     {
         $this->fieldsResolver = $fieldsResolver;
+        $this->nameCustomizer = static::$defaultNameCustomizer;
         $this->locales = static::$defaultLocales;
+    }
+
+    /**
+     * Use the original name of the field.
+     */
+    public function originalName(): self
+    {
+        $this->nameCustomizer = static::originalNameCustomizer();
+
+        return $this;
     }
 
     /**
@@ -225,7 +263,11 @@ class Fields
      */
     protected function configureField(Field $field, string $locale): Field
     {
-        $field = $this->modifyAttribute($field, $locale)
+        return tap($field, function (Field $field) use ($locale) {
+            $this->modifyName($field, $locale);
+            $this->modifyAttribute($field, $locale);
+            $this->configureIndexView($field, $locale);
+        })
             ->resolveUsing(function ($value, Model $model, string $attribute) use ($locale) {
                 return $model->translator()->getOr($this->getOriginalAttribute($attribute, $locale), $locale);
             })
@@ -236,32 +278,24 @@ class Fields
                     $model->translator()->set($originalAttribute, $request->get($requestAttribute), $locale);
                 }
             });
-
-        $this->configureIndexField($field, $locale);
-
-        return $field;
     }
 
     /**
      * Configure index field according to the given locale.
      */
-    protected function configureIndexField(Field $field, string $locale): Field
+    protected function configureIndexView(Field $field, string $locale): void
     {
-        if (is_null($this->getIndexLocales())) {
-            return $field;
+        if (! is_null($this->getIndexLocales())) {
+            $originalCondition = $field->showOnIndex;
+
+            $field->showOnIndex(function () use ($originalCondition, $locale) {
+                $isShown = is_callable($originalCondition)
+                    ? $originalCondition(func_get_args())
+                    : $originalCondition;
+
+                return $isShown && collect($this->getIndexLocales())->contains($locale);
+            });
         }
-
-        $originalCondition = $field->showOnIndex;
-
-        $field->showOnIndex(function () use ($originalCondition, $locale) {
-            $isShown = is_callable($originalCondition)
-                ? $originalCondition(func_get_args())
-                : $originalCondition;
-
-            return $isShown && collect($this->getIndexLocales())->contains($locale);
-        });
-
-        return $field;
     }
 
     /**
@@ -314,21 +348,33 @@ class Fields
     }
 
     /**
-     * Get the original attribute name.
+     * Modify the field name according to the locale.
      */
-    protected function getOriginalAttribute(string $attribute, string $locale): string
+    protected function modifyName(Field $field, string $locale): void
     {
-        return Str::beforeLast($attribute, $this->attributeSuffix($locale));
+        $customizer = $this->nameCustomizer ?: static function (string $name, string $locale) {
+            return "{$name} ($locale)";
+        };
+
+        $field->name = $customizer($field->name, $locale);
+    }
+
+    /**
+     * The customizer function to keep original name.
+     */
+    protected static function originalNameCustomizer(): callable
+    {
+        return static function (string $name) {
+            return $name;
+        };
     }
 
     /**
      * Modify the field attribute according to the locale.
      */
-    protected function modifyAttribute(Field $field, string $locale): Field
+    protected function modifyAttribute(Field $field, string $locale): void
     {
         $field->attribute .= $this->attributeSuffix($locale);
-
-        return $field;
     }
 
     /**
@@ -337,5 +383,13 @@ class Fields
     protected function attributeSuffix(string $locale): string
     {
         return static::getAttributeLocaleSeparator() . $locale;
+    }
+
+    /**
+     * Get the original attribute name.
+     */
+    protected function getOriginalAttribute(string $attribute, string $locale): string
+    {
+        return Str::beforeLast($attribute, $this->attributeSuffix($locale));
     }
 }
