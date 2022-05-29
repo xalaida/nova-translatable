@@ -246,6 +246,4 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 
 - [ ] refactor `ignoreUntouched` behaviour using `has` translator method.
 - [ ] add `filterable` support.
-- [ ] add `mergeLocales` method.
-- [ ] add `onlyFallbackLocaleRequired`, `onlyCurrentLocaleRequired` methods.
-- [ ] add `ignoreUntouchedOnUpdate`, `ignoreUntouchedOnCreate` methods.
+- [ ] add `onlyFallbackLocaleRequired()`, `onlyCurrentLocaleRequired()`, `onlyLocalesRequired(['en', 'uk'])` helpers.

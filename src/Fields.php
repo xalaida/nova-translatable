@@ -157,6 +157,16 @@ class Fields
     }
 
     /**
+     * Merge the given locales to the fields' locales.
+     */
+    public function mergeLocales(array $locales): self
+    {
+        $this->locales = array_merge($this->locales, $locales);
+
+        return $this;
+    }
+
+    /**
      * Get the locale list for the index view.
      */
     public function getIndexLocales(): ?array
