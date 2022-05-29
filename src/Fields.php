@@ -15,28 +15,38 @@ class Fields
 {
     /**
      * The default locales list.
+     *
+     * @var array
      */
-    protected static array $defaultLocales = [];
+    protected static $defaultLocales = [];
 
     /**
      * The attribute locale separator.
+     *
+     * @var string
      */
-    protected static string $attributeLocaleSeparator = '__';
+    protected static $attributeLocaleSeparator = '__';
 
     /**
      * The locales list.
+     *
+     * @var array
      */
-    protected array $locales = [];
+    protected $locales = [];
 
     /**
      * The index locales list.
+     *
+     * @var array|null
      */
-    protected ?array $indexLocales = null;
+    protected $indexLocales;
 
     /**
      * Indicates that untouched fields should be ignored.
+     *
+     * @var bool
      */
-    protected bool $ignoreUntouched = false;
+    protected $ignoreUntouched = false;
 
     /**
      * The fields' resolver function.
@@ -70,11 +80,11 @@ class Fields
     }
 
     /**
-     * Make a new factory instance using the given resolver of fields.
+     * Make a new fields factory instance using the given fields' resolver function.
      *
      * @param callable(string $locale): array<Field> $fieldsResolver
      */
-    public static function forLocale(callable $fieldsResolver): static
+    public static function forLocale(callable $fieldsResolver): self
     {
         return new static($fieldsResolver);
     }
@@ -93,7 +103,7 @@ class Fields
     /**
      * Use the given locales for the field.
      */
-    public function locales(array $locales): static
+    public function locales(array $locales): self
     {
         $this->locales = $locales;
 
@@ -119,7 +129,7 @@ class Fields
     /**
      * Show a field only for the current locale on the index view.
      */
-    public function onlyCurrentLocaleOnIndex(): static
+    public function onlyCurrentLocaleOnIndex(): self
     {
         return $this->onlyLocalesOnIndex([config('app.locale')]);
     }
@@ -127,7 +137,7 @@ class Fields
     /**
      * Show a field only for the fallback locale on the index view.
      */
-    public function onlyFallbackLocaleOnIndex(): static
+    public function onlyFallbackLocaleOnIndex(): self
     {
         return $this->onlyLocalesOnIndex([config('app.fallback_locale')]);
     }
@@ -135,7 +145,7 @@ class Fields
     /**
      * Show fields only for the given locales on the index view.
      */
-    public function onlyLocalesOnIndex(array $locales = []): static
+    public function onlyLocalesOnIndex(array $locales = []): self
     {
         $this->indexLocales = $locales;
 
@@ -145,7 +155,7 @@ class Fields
     /**
      * Show fields for each locale in the index view except the given locales.
      */
-    public function exceptLocalesOnIndex(array $locales = []): static
+    public function exceptLocalesOnIndex(array $locales = []): self
     {
         $this->indexLocales = collect($this->getLocales())
             ->diff($locales)
@@ -157,7 +167,7 @@ class Fields
     /**
      * Ignore the untouched field.
      */
-    public function ignoreUntouched(bool $ignoreUntouched = true): static
+    public function ignoreUntouched(bool $ignoreUntouched = true): self
     {
         $this->ignoreUntouched = $ignoreUntouched;
 
@@ -173,7 +183,7 @@ class Fields
     }
 
     /**
-     * Make fields for each locale.
+     * Make fields for all locales.
      */
     public function makeFields(): array
     {
@@ -203,7 +213,7 @@ class Fields
     }
 
     /**
-     * Make new fields instance in the given locale.
+     * Resolve fields for the given locale.
      */
     protected function newFields(string $locale): array
     {
