@@ -231,8 +231,10 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 
 ## 🔨 To Do
 
+- [ ] refactor `ignoreUntouched` behaviour using `has` translator method.
 - [ ] add static `labelUsing` method and add possibility to configure global labelSuffix.
 - [ ] add `rawLabel` method.
+- [ ] add `filterable` support.
 - [ ] add `onlyFallbackLocaleRequired`, `onlyCurrentLocaleRequired` methods.
 - [ ] add `ignoreUntouchedOnUpdate`, `ignoreUntouchedOnCreate` methods.
 - [ ] add `mergeLocales` method.
