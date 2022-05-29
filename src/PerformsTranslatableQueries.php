@@ -113,8 +113,8 @@ trait PerformsTranslatableQueries
     protected static function guessAttributeAndLocale(string $column): array
     {
         return [
-            Str::beforeLast($column, Translatable::getAttributeLocaleSeparator()),
-            Str::afterLast($column, Translatable::getAttributeLocaleSeparator())
+            Str::beforeLast($column, Fields::getAttributeLocaleSeparator()),
+            Str::afterLast($column, Fields::getAttributeLocaleSeparator())
         ];
     }
 }

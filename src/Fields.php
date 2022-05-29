@@ -11,7 +11,7 @@ use Laravel\Nova\Http\Requests\NovaRequest;
 /**
  * @TODO add helper to mark field as required only for fallback locale.
  */
-class Translatable
+class Fields
 {
     /**
      * The default locales list.
@@ -74,7 +74,7 @@ class Translatable
      *
      * @param callable(string $locale): array<Field> $fieldsResolver
      */
-    public static function fields(callable $fieldsResolver): static
+    public static function forLocale(callable $fieldsResolver): static
     {
         return new static($fieldsResolver);
     }
