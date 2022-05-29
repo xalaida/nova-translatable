@@ -47,8 +47,6 @@ class Book extends Resource
             ])
                 ->onlyCurrentLocaleOnIndex()
                 ->make(),
- 
-            // ...
         ];
     }
 }
