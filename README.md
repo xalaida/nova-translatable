@@ -4,7 +4,7 @@ This package allows you to add translatable fields to Laravel Nova resources.
 
 It is designed to work in tandem with the main [nevadskiy/laravel-translatable](https://github.com/nevadskiy/laravel-translatable.git) package, which manages how translations are stored in the database.
 
-## Installation
+## 🔌 Installation
 
 ```bash
 composer require nevadskiy/nova-translatable
@@ -12,7 +12,7 @@ composer require nevadskiy/nova-translatable
 
 Also make sure the main [nevadskiy/laravel-translatable](https://github.com/nevadskiy/laravel-translatable.git) package is installed.
 
-## Demo
+## ⚙ Demo
 
 The code below shows how to make a Nova resource translatable using the package.
 
@@ -54,11 +54,9 @@ class Book extends Resource
 }
 ```
 
-## Documentation
+## 📄 Documentation
 
 ### Fields factory
-
-The package generates a field for each defined locale.
 
 To define translatable fields, use a `Nevadskiy\Nova\Translatable\Fields` factory as following:
 
@@ -72,11 +70,13 @@ Fields::forLocale(function (string $locale) {
     ->make(),
 ```
 
-The static `forLocale` method accepts a callable function,
+The static method `forLocale` accepts a callable function,
 that receives a single `$locale` argument for which translatable fields are going to be created 
 and must return an array with simple Nova fields that should be translatable.
 
-In the end, to generate those fields, you need to call a `make` method.
+In the end, to create those fields, you need to call a `make` method.
+
+So basically, if you define 2 fields for 4 locales, the factory will create 8 fields (4 x 2) which will behave like regular fields.
 
 ### Defining locales
 
@@ -92,8 +92,6 @@ public function boot(): void
     Fields::defaultLocales(['en', 'uk', 'pl', 'cz']);
 }
 ```
-
-So basically, if you define 4 locales and 2 fields, the package will create 8 fields (4 x 2) which will behave like regular fields.
 
 If you want to use different locales for resources, you can specify them using the `locales` method.
 
@@ -213,7 +211,25 @@ class Book extends Resource
 }
 ```
 
-## To Do
+## 📑 Changelog
+
+Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+
+## ☕ Contributing
+
+Contributions are welcome and will be fully credited.
+
+We accept contributions via Pull Requests.
+
+## 🔓 Security
+
+If you discover any security related issues, please [e-mail me](mailto:nevadskiy@gmail.com) instead of using the issue tracker.
+
+## 📜 License
+
+The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
+
+## 🔨 To Do
 
 - [ ] add static `labelUsing` method and add possibility to configure global labelSuffix.
 - [ ] add `rawLabel` method.
