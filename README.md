@@ -248,3 +248,4 @@ The MIT License (MIT). Please see [LICENSE](LICENSE.md) for more information.
 - [ ] add `filterable` support.
 - [ ] add `onlyFallbackLocaleRequired()`, `onlyCurrentLocaleRequired()`, `onlyLocalesRequired(['en', 'uk'])` helpers.
 - [ ] add possibility to delete translation value if field is not `required` and is not `nullable`. when field is nullable - just nullify the translation.
+- [ ] fix nova fields (`Code`, `Trix`, etc.)
