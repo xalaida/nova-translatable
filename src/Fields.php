@@ -60,6 +60,13 @@ class Fields
     protected $indexLocales;
 
     /**
+     * The required locales list.
+     *
+     * @var array|null
+     */
+    protected $requiredLocales;
+
+    /**
      * Indicates that untouched fields should be ignored.
      *
      * @var bool
@@ -205,11 +212,49 @@ class Fields
      */
     public function exceptLocalesOnIndex(array $locales = []): self
     {
-        $this->indexLocales = collect($this->getLocales())
-            ->diff($locales)
-            ->all();
+        return $this->onlyLocalesOnIndex(
+            collect($this->getLocales())
+                ->diff($locales)
+                ->all()
+        );
+    }
+
+    /**
+     * Make fields in only the current locale required.
+     */
+    public function requiredOnlyCurrentLocale(): self
+    {
+        return $this->requiredOnlyLocales([config('app.locale')]);
+    }
+
+    /**
+     * Make fields in only the fallback locale required.
+     */
+    public function requiredOnlyFallbackLocale(): self
+    {
+        return $this->requiredOnlyLocales([config('app.fallback_locale')]);
+    }
+
+    /**
+     * Make fields in the given locales required.
+     */
+    public function requiredOnlyLocales(array $locales = []): self
+    {
+        $this->requiredLocales = $locales;
 
         return $this;
+    }
+
+    /**
+     * Make fields in all locales required except the given ones.
+     */
+    public function requiredExceptLocales(array $locales = []): self
+    {
+        return $this->requiredOnlyLocales(
+            collect($this->getLocales())
+                ->diff($locales)
+                ->all()
+        );
     }
 
     /**
@@ -277,6 +322,7 @@ class Fields
             $this->modifyName($field, $locale);
             $this->modifyAttribute($field, $locale);
             $this->configureIndexView($field, $locale);
+            $this->configureRequired($field, $locale);
         })
             ->resolveUsing(function ($value, Model $model, string $attribute) use ($locale) {
                 return $model->translator()->getOr($this->getOriginalAttribute($attribute, $locale), $locale);
@@ -295,15 +341,33 @@ class Fields
      */
     protected function configureIndexView(Field $field, string $locale): void
     {
-        if (! is_null($this->getIndexLocales())) {
-            $originalCondition = $field->showOnIndex;
+        if (! is_null($this->indexLocales)) {
+            $showOnIndex = $field->showOnIndex;
 
-            $field->showOnIndex(function () use ($originalCondition, $locale) {
-                $isShown = is_callable($originalCondition)
-                    ? $originalCondition(func_get_args())
-                    : $originalCondition;
+            $field->showOnIndex(function () use ($showOnIndex, $locale) {
+                $isShown = is_callable($showOnIndex)
+                    ? call_user_func_array($showOnIndex, func_get_args())
+                    : $showOnIndex;
 
-                return $isShown && collect($this->getIndexLocales())->contains($locale);
+                return $isShown && collect($this->indexLocales)->contains($locale);
+            });
+        }
+    }
+
+    /**
+     * Configure required field according to the given locale.
+     */
+    protected function configureRequired(Field $field, string $locale): void
+    {
+        if (! is_null($this->requiredLocales)) {
+            $requiredCallback = $field->requiredCallback;
+
+            $field->required(function () use ($requiredCallback, $locale) {
+                $isRequired = is_callable($requiredCallback)
+                    ? call_user_func_array($requiredCallback, func_get_args())
+                    : $requiredCallback;
+
+                return (is_null($isRequired) || $isRequired) && collect($this->requiredLocales)->contains($locale);
             });
         }
     }
@@ -316,7 +380,9 @@ class Fields
     protected function configureFieldFilter(Field $field, string $locale): void
     {
         $field->filterableCallback = function (NovaRequest $request, $query, $value) use ($field, $locale) {
-            return $query->whereTranslatable($this->getOriginalAttribute($field->attribute, $locale), $value, $locale);
+            return $query->whereTranslatable(
+                $this->getOriginalAttribute($field->attribute, $locale), $value, $locale
+            );
         };
     }
 
