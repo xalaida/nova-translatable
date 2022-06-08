@@ -411,8 +411,7 @@ class Fields
      */
     protected function isTouched(NovaRequest $request, Model $model, string $attribute, string $requestAttribute, string $locale): bool
     {
-        // TODO: refactor using ->has() method, method ->getOr() can return empty string.
-        if ($model->translator()->getOr($attribute, $locale)) {
+        if ($model->translator()->has($attribute, $locale)) {
             return true;
         }
 
