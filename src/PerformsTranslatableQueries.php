@@ -9,55 +9,9 @@ use Laravel\Nova\Resource;
 
 /**
  * @mixin Resource
- * TODO: refactor eager loading by resolving locales from fields
  */
 trait PerformsTranslatableQueries
 {
-    /**
-     * @inheritdoc
-     */
-    protected static function initializeQuery(NovaRequest $request, $query, $search, $withTrashed)
-    {
-        return parent::initializeQuery($request, $query, $search, $withTrashed)
-            ->withoutTranslationsScope();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function indexQuery(NovaRequest $request, $query)
-    {
-        return parent::indexQuery($request, $query)
-            ->with('translations');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function detailQuery(NovaRequest $request, $query): Builder
-    {
-        return parent::detailQuery($request, $query)
-            ->with('translations');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function editQuery(NovaRequest $request, $query)
-    {
-        return parent::editQuery($request, $query)
-            ->with('translations');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function relatableQuery(NovaRequest $request, $query)
-    {
-        return parent::relatableQuery($request, $query)
-            ->with('translations');
-    }
-
     /**
      * @inheritdoc
      */
@@ -95,7 +49,7 @@ trait PerformsTranslatableQueries
         }
 
         foreach ($orderings as $column => $direction) {
-            [$guessColumn, $locale] = static::guessAttributeAndLocale($column);
+            [$guessColumn, $locale] = static::guessTranslatableColumnAndLocale($column);
 
             if ($query->getModel()->isTranslatable($guessColumn)) {
                 $query->orderByTranslatable($guessColumn, $direction, $locale);
@@ -108,13 +62,10 @@ trait PerformsTranslatableQueries
     }
 
     /**
-     * Guess the original attribute name and locale from the given column.
+     * Guess a translatable column and locale from the given column.
      */
-    protected static function guessAttributeAndLocale(string $column): array
+    protected static function guessTranslatableColumnAndLocale(string $column): array
     {
-        return [
-            Str::beforeLast($column, Fields::getAttributeLocaleSeparator()),
-            Str::afterLast($column, Fields::getAttributeLocaleSeparator())
-        ];
+        return [Str::beforeLast($column, '__'), Str::afterLast($column, '__')];
     }
 }
