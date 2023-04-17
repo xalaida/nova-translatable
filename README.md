@@ -65,8 +65,6 @@ To specify the global list of locales, you can add the following code to the `Ap
 ```php
 use Nevadskiy\Nova\Translatable\Localizer;
 
-...
-
 public function boot(): void
 {
     Localizer::locales(['en', 'uk', 'pl', 'cz']);
@@ -81,8 +79,6 @@ To customize the name display logic for fields, you can specify the customizer f
 
 ```php
 use Nevadskiy\Nova\Translatable\Fields;
-
-...
 
 public function boot(): void
 {
