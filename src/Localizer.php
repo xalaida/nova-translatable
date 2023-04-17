@@ -7,6 +7,11 @@ use Illuminate\Support\Arr;
 class Localizer
 {
     /**
+     * The separator between an attribute name and locale.
+     */
+    public const SEPARATOR = '__';
+
+    /**
      * The locale list.
      *
      * @var array
@@ -75,6 +80,6 @@ class Localizer
      */
     public static function localizeAttribute(string $attribute, string $locale): string
     {
-        return "{$attribute}__$locale";
+        return $attribute.self::SEPARATOR.$locale;
     }
 }

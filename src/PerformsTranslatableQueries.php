@@ -66,6 +66,9 @@ trait PerformsTranslatableQueries
      */
     protected static function guessTranslatableColumnAndLocale(string $column): array
     {
-        return [Str::beforeLast($column, '__'), Str::afterLast($column, '__')];
+        return [
+            Str::beforeLast($column, Localizer::SEPARATOR),
+            Str::afterLast($column, Localizer::SEPARATOR)
+        ];
     }
 }
