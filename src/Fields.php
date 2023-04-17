@@ -2,469 +2,89 @@
 
 namespace Nevadskiy\Nova\Translatable;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\MergeValue;
-use Illuminate\Support\Str;
-use Laravel\Nova\Fields\Field;
-use Laravel\Nova\Http\Requests\NovaRequest;
 
-class Fields
+class Fields extends MergeValue
 {
     /**
-     * The default locales list.
-     *
-     * @var array
+     * Perform a callback only for a field with the given locale.
      */
-    protected static $defaultLocales = [];
-
-    /**
-     * The attribute locale separator.
-     *
-     * @var string
-     */
-    protected static $attributeLocaleSeparator = '__';
-
-    /**
-     * The default field name customizer function.
-     *
-     * @var callable
-     */
-    protected static $defaultNameCustomizer;
-
-    /**
-     * The fields' resolver function.
-     *
-     * @var callable
-     */
-    protected $fieldsResolver;
-
-    /**
-     * The field name customizer function.
-     *
-     * @var callable
-     */
-    protected $nameCustomizer;
-
-    /**
-     * The locales list.
-     *
-     * @var array
-     */
-    protected $locales = [];
-
-    /**
-     * The index locales list.
-     *
-     * @var array|null
-     */
-    protected $indexLocales;
-
-    /**
-     * The required locales list.
-     *
-     * @var array|null
-     */
-    protected $requiredLocales;
-
-    /**
-     * Indicates that untouched fields should be ignored.
-     *
-     * @var bool
-     */
-    protected $ignoreUntouched = false;
-
-    /**
-     * Specify the locale list for the field.
-     */
-    public static function defaultLocales(array $locales): void
+    public function onLocale(string $locale, callable $callback): self
     {
-        static::$defaultLocales = $locales;
-    }
-
-    /**
-     * Specify the default customizer function for the field name.
-     */
-    public static function nameUsing(callable $customizer): void
-    {
-        static::$defaultNameCustomizer = $customizer;
-    }
-
-    /**
-     * Specify the default customizer function for the field name.
-     */
-    public static function originalNames(): void
-    {
-        static::$defaultNameCustomizer = static::originalNameCustomizer();
-    }
-
-    /**
-     * Specify the attribute locale separator for the field.
-     */
-    public static function attributeLocaleSeparator(string $separator): void
-    {
-        static::$attributeLocaleSeparator = $separator;
-    }
-
-    /**
-     * Get the attribute locale separator for the field.
-     */
-    public static function getAttributeLocaleSeparator(): string
-    {
-        return static::$attributeLocaleSeparator;
-    }
-
-    /**
-     * Make a new fields factory instance using the given fields' resolver function.
-     *
-     * @param callable(string $locale): array<Field> $fieldsResolver
-     */
-    public static function forLocale(callable $fieldsResolver): self
-    {
-        return new static($fieldsResolver);
-    }
-
-    /**
-     * Make a new fields factory instance.
-     *
-     * @param callable(string $locale): array<Field> $fieldsResolver
-     */
-    public function __construct(callable $fieldsResolver)
-    {
-        $this->fieldsResolver = $fieldsResolver;
-        $this->nameCustomizer = static::$defaultNameCustomizer;
-        $this->locales = static::$defaultLocales;
-    }
-
-    /**
-     * Use the original name of the field.
-     */
-    public function originalName(): self
-    {
-        $this->nameCustomizer = static::originalNameCustomizer();
-
-        return $this;
-    }
-
-    /**
-     * Use the given locales for the field.
-     */
-    public function locales(array $locales): self
-    {
-        $this->locales = $locales;
-
-        return $this;
-    }
-
-    /**
-     * Get the locale list.
-     */
-    public function getLocales(): array
-    {
-        return $this->locales;
-    }
-
-    /**
-     * Merge the given locales to the fields' locales.
-     */
-    public function mergeLocales(array $locales): self
-    {
-        $this->locales = array_merge($this->locales, $locales);
-
-        return $this;
-    }
-
-    /**
-     * Get the locale list for the index view.
-     */
-    public function getIndexLocales(): ?array
-    {
-        return $this->indexLocales;
-    }
-
-    /**
-     * Show a field only for the current locale on the index view.
-     */
-    public function onlyCurrentLocaleOnIndex(): self
-    {
-        return $this->onlyLocalesOnIndex([config('app.locale')]);
-    }
-
-    /**
-     * Show a field only for the fallback locale on the index view.
-     */
-    public function onlyFallbackLocaleOnIndex(): self
-    {
-        return $this->onlyLocalesOnIndex([config('app.fallback_locale')]);
-    }
-
-    /**
-     * Show fields only for the given locales on the index view.
-     */
-    public function onlyLocalesOnIndex(array $locales = []): self
-    {
-        $this->indexLocales = $locales;
-
-        return $this;
-    }
-
-    /**
-     * Show fields for each locale in the index view except the given locales.
-     */
-    public function exceptLocalesOnIndex(array $locales = []): self
-    {
-        return $this->onlyLocalesOnIndex(
-            collect($this->getLocales())
-                ->diff($locales)
-                ->all()
-        );
-    }
-
-    /**
-     * Make fields in only the current locale required.
-     */
-    public function requiredOnlyCurrentLocale(): self
-    {
-        return $this->requiredOnlyLocales([config('app.locale')]);
-    }
-
-    /**
-     * Make fields in only the fallback locale required.
-     */
-    public function requiredOnlyFallbackLocale(): self
-    {
-        return $this->requiredOnlyLocales([config('app.fallback_locale')]);
-    }
-
-    /**
-     * Make fields in the given locales required.
-     */
-    public function requiredOnlyLocales(array $locales = []): self
-    {
-        $this->requiredLocales = $locales;
-
-        return $this;
-    }
-
-    /**
-     * Make fields in all locales required except the given ones.
-     */
-    public function requiredExceptLocales(array $locales = []): self
-    {
-        return $this->requiredOnlyLocales(
-            collect($this->getLocales())
-                ->diff($locales)
-                ->all()
-        );
-    }
-
-    /**
-     * Ignore the untouched field.
-     */
-    public function ignoreUntouched(bool $ignoreUntouched = true): self
-    {
-        $this->ignoreUntouched = $ignoreUntouched;
-
-        return $this;
-    }
-
-    /**
-     * Make translatable fields.
-     */
-    public function make(): MergeValue
-    {
-        return new MergeValue($this->makeFields());
-    }
-
-    /**
-     * Make fields for all locales.
-     */
-    public function makeFields(): array
-    {
-        $fields = [];
-
-        foreach ($this->getLocales() as $locale) {
-            foreach ($this->makeFieldsForLocale($locale) as $field) {
-                $fields[] = $field;
+        foreach ($this->all() as $field) {
+            if ($field->getLocale() === $locale) {
+                $callback($field);
             }
         }
 
-        return $fields;
+        return $this;
     }
 
     /**
-     * Make fields for the given locale.
+     * Perform a callback only for a field with a fallback locale.
      */
-    protected function makeFieldsForLocale(string $locale): array
+    public function onFallbackLocale(callable $callback): self
     {
-        $fields = [];
+        return $this->onLocale($this->getFallbackLocale(), $callback);
+    }
 
-        foreach ($this->newFields($locale) as $field) {
-            $fields[] = $this->configureField($field, $locale);
+    /**
+     * Show only a field with a fallback locale on the index view.
+     */
+    public function showOnIndexOnlyFallbackLocale(): self
+    {
+        foreach ($this->all() as $field) {
+            if ($field->getLocale() === $this->getFallbackLocale()) {
+                $field->showOnIndex();
+            } else {
+                $field->hideFromIndex();
+            }
         }
 
-        return $fields;
+        return $this;
     }
 
     /**
-     * Resolve fields for the given locale.
+     * Show only a field with a fallback locale on the index view.
      */
-    protected function newFields(string $locale): array
+    public function requiredOnlyFallbackLocale(): self
     {
-        return call_user_func($this->fieldsResolver, $locale);
-    }
-
-    /**
-     * Configure the field according to the given locale.
-     */
-    protected function configureField(Field $field, string $locale): Field
-    {
-        return tap($field, function (Field $field) use ($locale) {
-            $this->modifyName($field, $locale);
-            $this->modifyAttribute($field, $locale);
-            $this->configureIndexView($field, $locale);
-            $this->configureRequired($field, $locale);
-        })
-            ->resolveUsing(function ($value, Model $model, string $attribute) use ($locale) {
-                return $model->translator()->getOr($this->getOriginalAttribute($attribute, $locale), $locale);
-            })
-            ->fillUsing(function (NovaRequest $request, Model $model, string $attribute, string $requestAttribute) use ($locale) {
-                $originalAttribute = $this->getOriginalAttribute($attribute, $locale);
-
-                if ($this->shouldFill($request, $model, $originalAttribute, $requestAttribute, $locale)) {
-                    $model->translator()->set($originalAttribute, $request->get($requestAttribute), $locale);
-                }
-            });
-    }
-
-    /**
-     * Configure index field according to the given locale.
-     */
-    protected function configureIndexView(Field $field, string $locale): void
-    {
-        if (! is_null($this->indexLocales)) {
-            $showOnIndex = $field->showOnIndex;
-
-            $field->showOnIndex(function () use ($showOnIndex, $locale) {
-                $isShown = is_callable($showOnIndex)
-                    ? call_user_func_array($showOnIndex, func_get_args())
-                    : $showOnIndex;
-
-                return $isShown && collect($this->indexLocales)->contains($locale);
-            });
-        }
-    }
-
-    /**
-     * Configure required field according to the given locale.
-     */
-    protected function configureRequired(Field $field, string $locale): void
-    {
-        if (! is_null($this->requiredLocales)) {
-            $requiredCallback = $field->requiredCallback;
-
-            $field->required(function () use ($requiredCallback, $locale) {
-                $isRequired = is_callable($requiredCallback)
-                    ? call_user_func_array($requiredCallback, func_get_args())
-                    : $requiredCallback;
-
-                return (is_null($isRequired) || $isRequired) && collect($this->requiredLocales)->contains($locale);
-            });
-        }
-    }
-
-    /**
-     * Configure a filter of the field.
-     *
-     * @TODO: feature this.
-     */
-    protected function configureFieldFilter(Field $field, string $locale): void
-    {
-        $field->filterableCallback = function (NovaRequest $request, $query, $value) use ($field, $locale) {
-            return $query->whereTranslatable(
-                $this->getOriginalAttribute($field->attribute, $locale), $value, $locale
-            );
-        };
-    }
-
-    /**
-     * Determine if the field should be filled.
-     */
-    protected function shouldFill(NovaRequest $request, Model $model, string $attribute, string $requestAttribute, string $locale): bool
-    {
-        if (! $request->has($requestAttribute)) {
-            return false;
+        foreach ($this->all() as $field) {
+            if ($field->getLocale() === $this->getFallbackLocale()) {
+                $field->mergeRules(['required']);
+            } else {
+                $field->mergeRules(['nullable']);
+            }
         }
 
-        if ($this->isTouched($request, $model, $attribute, $requestAttribute, $locale)) {
-            return true;
+        return $this;
+    }
+
+    /**
+     * Proxy calls on each field.
+     */
+    public function __call(string $name, array $arguments)
+    {
+        foreach ($this->all() as $field) {
+            call_user_func([$field, $name], ...$arguments);
         }
 
-        if ($this->ignoreUntouched) {
-            return false;
-        }
-
-        return true;
+        return $this;
     }
 
     /**
-     * Determine if the field was touched.
+     * Get all localized fields.
      */
-    protected function isTouched(NovaRequest $request, Model $model, string $attribute, string $requestAttribute, string $locale): bool
+    public function all(): array
     {
-        if ($model->translator()->has($attribute, $locale)) {
-            return true;
-        }
-
-        if ($request->get($requestAttribute)) {
-            return true;
-        }
-
-        return false;
+        return $this->data;
     }
 
     /**
-     * Modify the field name according to the locale.
+     * Get the fallback locale.
      */
-    protected function modifyName(Field $field, string $locale): void
+    protected function getFallbackLocale(): string
     {
-        $customizer = $this->nameCustomizer ?: static function (string $name, string $locale) {
-            return "{$name} ($locale)";
-        };
-
-        $field->name = $customizer($field->name, $locale);
-    }
-
-    /**
-     * The customizer function to keep original name.
-     */
-    protected static function originalNameCustomizer(): callable
-    {
-        return static function (string $name) {
-            return $name;
-        };
-    }
-
-    /**
-     * Modify the field attribute according to the locale.
-     */
-    protected function modifyAttribute(Field $field, string $locale): void
-    {
-        $field->attribute .= $this->attributeSuffix($locale);
-    }
-
-    /**
-     * Get the attribute suffix.
-     */
-    protected function attributeSuffix(string $locale): string
-    {
-        return static::getAttributeLocaleSeparator() . $locale;
-    }
-
-    /**
-     * Get the original attribute name.
-     */
-    protected function getOriginalAttribute(string $attribute, string $locale): string
-    {
-        return Str::beforeLast($attribute, $this->attributeSuffix($locale));
+        return app()->getFallbackLocale();
     }
 }
