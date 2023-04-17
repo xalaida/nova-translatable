@@ -39,7 +39,8 @@ class Book extends Resource
     public function fields(Request $request): array
     {
         return [
-            ID::make(__('ID'), 'id')->sortable(),
+            ID::make()
+                ->sortable(),
 
             Text::make('Name')
                 ->sortable()
